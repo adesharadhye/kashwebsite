@@ -34,6 +34,7 @@ SECRET_KEY = (
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (os.getenv("DEBUG") or os.getenv("DJANGO_DEBUG", "False")) == "True"
+BACKEND_PASSWORD = os.getenv("BACKEND_PASSWORD")
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -87,6 +88,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'kashwebsite.urls'
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 TEMPLATES = [
     {

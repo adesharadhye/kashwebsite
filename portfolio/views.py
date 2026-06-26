@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
@@ -139,11 +138,33 @@ def _validate_pdf(uploaded_file):
         raise ValidationError('Only PDF files are allowed.')
 
 
+def _backend_password():
+    return getattr(settings, 'BACKEND_PASSWORD', None) or 'kashish123'
+
+
+def _render_backend_login(request, error=''):
+    return render(request, 'portfolio/backend_login.html', {
+        'error': error,
+    })
+
+
 @require_http_methods(['GET', 'POST'])
-@staff_member_required
 def upload_documents(request):
     message = ''
     error = ''
+
+    if request.POST.get('action') == 'logout':
+        request.session.pop('backend_authenticated', None)
+        return _render_backend_login(request)
+
+    if not request.session.get('backend_authenticated'):
+        if request.method == 'POST' and request.POST.get('action') == 'login':
+            if request.POST.get('password') == _backend_password():
+                request.session['backend_authenticated'] = True
+            else:
+                return _render_backend_login(request, 'Incorrect password.')
+        else:
+            return _render_backend_login(request)
 
     if request.method == 'POST':
         action = request.POST.get('action', 'document')

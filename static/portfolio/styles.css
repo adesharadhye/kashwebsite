@@ -349,6 +349,7 @@ select,
 input[type="file"],
 input[type="text"],
 input[type="email"],
+input[type="password"],
 textarea {
   min-height: 46px;
   padding: 10px 12px;
@@ -357,6 +358,14 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 6px;
   font: inherit;
+}
+
+.backend-login-panel {
+  max-width: 460px;
+}
+
+.logout-form {
+  margin-top: 18px;
 }
 
 textarea {

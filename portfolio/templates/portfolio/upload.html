@@ -14,6 +14,11 @@
         <p class="eyebrow">Backend</p>
         <h3 class="upload-title">Upload resume or PDF drawing</h3>
         <p class="muted">Upload a PDF here and the public download buttons will update automatically.</p>
+        <form method="post" class="logout-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="logout">
+          <button type="submit" class="button ghost">Logout</button>
+        </form>
 
         {% if message %}<div class="notice success">{{ message }}</div>{% endif %}
         {% if error %}<div class="notice error">{{ error }}</div>{% endif %}

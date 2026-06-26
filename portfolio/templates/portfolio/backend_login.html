@@ -1,0 +1,29 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Backend Login</title>
+    <link rel="stylesheet" href="{% static 'portfolio/styles.css' %}">
+  </head>
+  <body>
+    <main class="upload-shell">
+      <a class="back-link" href="/">Back to website</a>
+      <section class="upload-panel backend-login-panel">
+        <p class="eyebrow">Backend</p>
+        <h3 class="upload-title">Login</h3>
+        {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+        <form method="post" class="upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="login">
+          <label>
+            Password
+            <input type="password" name="password" required autofocus>
+          </label>
+          <button type="submit">Open Backend</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>
