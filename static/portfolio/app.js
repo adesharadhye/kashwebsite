@@ -1,5 +1,51 @@
 (function () {
   const e = React.createElement;
+  const fallbackData = {
+    profile: {
+      name: 'Kashish',
+      role: 'Civil Engineering Professional',
+      summary: 'Civil Engineering professional focused on site execution, structural planning, quantity estimation, quality control, and efficient project delivery across diverse construction projects.',
+      contact: {
+        location: 'India',
+        email: 'Add your email'
+      },
+      skills: [
+        'AutoCAD drawings',
+        'Quantity estimation',
+        'Site supervision',
+        'Construction planning',
+        'Surveying basics',
+        'Concrete and RCC work',
+        'Project documentation',
+        'Quality and safety checks'
+      ],
+      experience: [
+        {
+          title: 'Civil Engineering Portfolio',
+          meta: 'Resume-based presentation',
+          points: [
+            'Prepared to present resume, civil engineering strengths, and downloadable project documents in one place.',
+            'Highlights practical civil engineering work such as drawings, estimation, planning, and execution support.',
+            'Includes backend-managed PDF uploads so the latest resume and drawing files can be replaced without editing code.'
+          ]
+        }
+      ],
+      projects: [
+        {
+          name: 'Civil Drawing Package',
+          description: 'A downloadable PDF drawing can be uploaded from the backend and shared directly with visitors.'
+        },
+        {
+          name: 'Resume Portfolio',
+          description: 'A clean personal presentation page that turns resume information into a professional web profile.'
+        }
+      ]
+    },
+    documents: {
+      resume: null,
+      drawing: null
+    }
+  };
 
   function Section(props) {
     const sectionProps = Object.assign({}, props, { className: props.className || 'section' });
@@ -28,8 +74,16 @@
 
     React.useEffect(function () {
       fetch('/api/profile/')
-        .then(function (response) { return response.json(); })
-        .then(setData);
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Profile API failed');
+          }
+          return response.json();
+        })
+        .then(setData)
+        .catch(function () {
+          setData(fallbackData);
+        });
     }, []);
 
     if (!data) {

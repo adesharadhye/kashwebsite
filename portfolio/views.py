@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
+from django.db import DatabaseError
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -112,12 +113,23 @@ def home(request):
 
 
 def profile_data(request):
-    return JsonResponse({
-        'profile': _profile_payload(),
-        'documents': {
+    try:
+        profile = _profile_payload()
+        documents = {
             'resume': _latest_document(PortfolioDocument.RESUME),
             'drawing': _latest_document(PortfolioDocument.DRAWING),
-        },
+        }
+    except DatabaseError:
+        profile = PROFILE.copy()
+        profile['contact'] = PROFILE['contact'].copy()
+        documents = {
+            'resume': None,
+            'drawing': None,
+        }
+
+    return JsonResponse({
+        'profile': profile,
+        'documents': documents,
     })
 
 
