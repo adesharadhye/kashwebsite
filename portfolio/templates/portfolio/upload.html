@@ -1,0 +1,118 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Upload Portfolio Documents</title>
+    <link rel="stylesheet" href="{% static 'portfolio/styles.css' %}">
+  </head>
+  <body>
+    <main class="upload-shell">
+      <a class="back-link" href="/">Back to website</a>
+      <section class="upload-panel">
+        <p class="eyebrow">Backend</p>
+        <h3 class="upload-title">Upload resume or PDF drawing</h3>
+        <p class="muted">Upload a PDF here and the public download buttons will update automatically.</p>
+
+        {% if message %}<div class="notice success">{{ message }}</div>{% endif %}
+        {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+        <form method="post" class="upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="profile">
+          <label>
+            Email id
+            <input type="email" name="email" value="{{ profile.email }}" placeholder="your.email@example.com">
+          </label>
+          <button type="submit">Save Email</button>
+        </form>
+
+        <form method="post" class="upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="experience">
+          <label>
+            Experience title
+            <input type="text" name="title" placeholder="Site Engineer Intern" required>
+          </label>
+          <label>
+            Company / duration
+            <input type="text" name="meta" placeholder="Company name • Jan 2025 - Mar 2025">
+          </label>
+          <label>
+            Experience points
+            <textarea name="points" rows="5" placeholder="Write one point per line" required></textarea>
+          </label>
+          <button type="submit">Add Experience</button>
+        </form>
+
+        <form method="post" class="upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="skill">
+          <label>
+            Skill
+            <input type="text" name="name" placeholder="AutoCAD drawings" required>
+          </label>
+          <button type="submit">Add Skill</button>
+        </form>
+
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="document">
+          <label>
+            Document type
+            <select name="document_type" required>
+              <option value="resume">Resume</option>
+              <option value="drawing">PDF Drawing</option>
+            </select>
+          </label>
+          <label>
+            PDF file
+            <input type="file" name="file" accept="application/pdf,.pdf" required>
+          </label>
+          <button type="submit">Upload PDF</button>
+        </form>
+
+        <div class="current-docs">
+          <h3 class="current-docs-title">Current downloads</h3>
+          <p>Resume: {% if documents.resume %}<a href="{{ documents.resume.url }}" download>{{ documents.resume.title }}</a>{% else %}Not uploaded{% endif %}</p>
+          <p>Drawing: {% if documents.drawing %}<a href="{{ documents.drawing.url }}" download>{{ documents.drawing.title }}</a>{% else %}Not uploaded{% endif %}</p>
+        </div>
+
+        <div class="current-docs">
+          <h3 class="current-docs-title">Current experience</h3>
+          {% for experience in experiences %}
+            <div class="backend-list-item">
+              <p><strong>{{ experience.title }}</strong>{% if experience.meta %} - {{ experience.meta }}{% endif %}</p>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_experience">
+                <input type="hidden" name="experience_id" value="{{ experience.id }}">
+                <button type="submit" class="small-danger">Delete</button>
+              </form>
+            </div>
+          {% empty %}
+            <p>No experience added yet.</p>
+          {% endfor %}
+        </div>
+
+        <div class="current-docs">
+          <h3 class="current-docs-title">Current skills</h3>
+          {% for skill in skills %}
+            <div class="backend-list-item">
+              <p>{{ skill.name }}</p>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_skill">
+                <input type="hidden" name="skill_id" value="{{ skill.id }}">
+                <button type="submit" class="small-danger">Delete</button>
+              </form>
+            </div>
+          {% empty %}
+            <p>No custom skills added yet. The frontend will use default skills until you add one.</p>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
