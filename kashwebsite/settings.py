@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+from importlib.util import find_spec
 from pathlib import Path
 
 try:
@@ -78,7 +79,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -86,6 +86,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if find_spec('whitenoise'):
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'kashwebsite.urls'
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
@@ -189,7 +192,11 @@ STORAGES = {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+        'BACKEND': (
+            'whitenoise.storage.CompressedStaticFilesStorage'
+            if find_spec('whitenoise')
+            else 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        ),
     },
 }
 

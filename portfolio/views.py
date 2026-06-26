@@ -148,6 +148,35 @@ def _render_backend_login(request, error=''):
     })
 
 
+def _backend_context(message='', error=''):
+    try:
+        profile = _profile()
+        skills = list(PortfolioSkill.objects.all())
+        experiences = list(PortfolioExperience.objects.all())
+        documents = {
+            'resume': _latest_document(PortfolioDocument.RESUME),
+            'drawing': _latest_document(PortfolioDocument.DRAWING),
+        }
+    except DatabaseError:
+        profile = type('ProfileFallback', (), {'email': ''})()
+        skills = []
+        experiences = []
+        documents = {
+            'resume': None,
+            'drawing': None,
+        }
+        error = error or 'Database tables are not ready yet. Redeploy on Railway so migrations can run.'
+
+    return {
+        'message': message,
+        'error': error,
+        'profile': profile,
+        'skills': skills,
+        'experiences': experiences,
+        'documents': documents,
+    }
+
+
 @require_http_methods(['GET', 'POST'])
 def upload_documents(request):
     message = ''
@@ -180,6 +209,8 @@ def upload_documents(request):
                 message = 'Email updated successfully.'
             except ValidationError:
                 error = 'Enter a valid email address.'
+            except DatabaseError:
+                error = 'Could not save email because the database is not ready. Redeploy so migrations can run.'
         elif action == 'experience':
             title = request.POST.get('title', '').strip()
             meta = request.POST.get('meta', '').strip()
@@ -190,30 +221,44 @@ def upload_documents(request):
             elif not points:
                 error = 'Enter at least one experience point.'
             else:
-                PortfolioExperience.objects.create(
-                    title=title,
-                    meta=meta,
-                    points=points,
-                    display_order=PortfolioExperience.objects.count() + 1,
-                )
-                message = 'Experience added successfully.'
+                try:
+                    display_order = PortfolioExperience.objects.count() + 1
+                    PortfolioExperience.objects.create(
+                        title=title,
+                        meta=meta,
+                        points=points,
+                        display_order=display_order,
+                    )
+                    message = 'Experience added successfully.'
+                except DatabaseError:
+                    error = 'Could not add experience because the database is not ready. Redeploy so migrations can run.'
         elif action == 'delete_experience':
-            PortfolioExperience.objects.filter(pk=request.POST.get('experience_id')).delete()
-            message = 'Experience deleted successfully.'
+            try:
+                PortfolioExperience.objects.filter(pk=request.POST.get('experience_id')).delete()
+                message = 'Experience deleted successfully.'
+            except DatabaseError:
+                error = 'Could not delete experience because the database is not ready.'
         elif action == 'skill':
             name = request.POST.get('name', '').strip()
 
             if not name:
                 error = 'Enter a skill name.'
             else:
-                PortfolioSkill.objects.create(
-                    name=name,
-                    display_order=PortfolioSkill.objects.count() + 1,
-                )
-                message = 'Skill added successfully.'
+                try:
+                    display_order = PortfolioSkill.objects.count() + 1
+                    PortfolioSkill.objects.create(
+                        name=name,
+                        display_order=display_order,
+                    )
+                    message = 'Skill added successfully.'
+                except DatabaseError:
+                    error = 'Could not add skill because the database is not ready. Redeploy so migrations can run.'
         elif action == 'delete_skill':
-            PortfolioSkill.objects.filter(pk=request.POST.get('skill_id')).delete()
-            message = 'Skill deleted successfully.'
+            try:
+                PortfolioSkill.objects.filter(pk=request.POST.get('skill_id')).delete()
+                message = 'Skill deleted successfully.'
+            except DatabaseError:
+                error = 'Could not delete skill because the database is not ready.'
         else:
             document_type = request.POST.get('document_type')
             uploaded_file = request.FILES.get('file')
@@ -235,15 +280,7 @@ def upload_documents(request):
                     message = f'{title} uploaded successfully.'
                 except ValidationError as exc:
                     error = exc.messages[0]
+                except DatabaseError:
+                    error = 'Could not save document because the database is not ready. Redeploy so migrations can run.'
 
-    return render(request, 'portfolio/upload.html', {
-        'message': message,
-        'error': error,
-        'profile': _profile(),
-        'skills': PortfolioSkill.objects.all(),
-        'experiences': PortfolioExperience.objects.all(),
-        'documents': {
-            'resume': _latest_document(PortfolioDocument.RESUME),
-            'drawing': _latest_document(PortfolioDocument.DRAWING),
-        },
-    })
+    return render(request, 'portfolio/upload.html', _backend_context(message, error))
