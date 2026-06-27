@@ -5,8 +5,10 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
 from django.db import DatabaseError
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
+from django.utils.text import get_valid_filename
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
@@ -91,7 +93,7 @@ def _latest_document(document_type):
     if document:
         return {
             'title': document.title,
-            'url': document.file.url,
+            'url': reverse('download-document', args=[document_type]),
             'uploadedAt': document.uploaded_at.isoformat(),
         }
 
@@ -99,7 +101,7 @@ def _latest_document(document_type):
     if fallback.exists():
         return {
             'title': 'Resume' if document_type == PortfolioDocument.RESUME else 'PDF Drawing',
-            'url': f'{settings.MEDIA_URL}documents/{document_type}.pdf',
+            'url': reverse('download-document', args=[document_type]),
             'uploadedAt': None,
         }
 
@@ -130,6 +132,24 @@ def profile_data(request):
         'profile': profile,
         'documents': documents,
     })
+
+
+def download_document(request, document_type):
+    if document_type not in {PortfolioDocument.RESUME, PortfolioDocument.DRAWING}:
+        raise Http404('Document not found.')
+
+    document = PortfolioDocument.objects.filter(document_type=document_type).first()
+    if document:
+        file_handle = document.file.open('rb')
+        filename = get_valid_filename(f'{document.title}.pdf')
+        return FileResponse(file_handle, as_attachment=True, filename=filename, content_type='application/pdf')
+
+    fallback_path = settings.MEDIA_ROOT / 'documents' / f'{document_type}.pdf'
+    if fallback_path.exists():
+        filename = 'resume.pdf' if document_type == PortfolioDocument.RESUME else 'drawing.pdf'
+        return FileResponse(fallback_path.open('rb'), as_attachment=True, filename=filename, content_type='application/pdf')
+
+    raise Http404('Document not found.')
 
 
 def _validate_pdf(uploaded_file):

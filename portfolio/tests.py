@@ -138,6 +138,35 @@ class PortfolioViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(PortfolioDocument.objects.filter(document_type=PortfolioDocument.DRAWING).exists())
 
+    def test_profile_api_returns_download_endpoint_for_uploaded_document(self):
+        PortfolioDocument.objects.create(
+            title='PDF Drawing',
+            document_type=PortfolioDocument.DRAWING,
+            file=SimpleUploadedFile('drawing.pdf', b'%PDF-1.4 test', content_type='application/pdf'),
+        )
+
+        response = self.client.get(reverse('profile-data'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()['documents']['drawing']['url'],
+            reverse('download-document', args=[PortfolioDocument.DRAWING]),
+        )
+
+    def test_download_document_returns_pdf_attachment(self):
+        PortfolioDocument.objects.create(
+            title='PDF Drawing',
+            document_type=PortfolioDocument.DRAWING,
+            file=SimpleUploadedFile('drawing.pdf', b'%PDF-1.4 test', content_type='application/pdf'),
+        )
+
+        response = self.client.get(reverse('download-document', args=[PortfolioDocument.DRAWING]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn('attachment;', response['Content-Disposition'])
+        self.assertEqual(b''.join(response.streaming_content), b'%PDF-1.4 test')
+
     def test_upload_rejects_non_pdf_document(self):
         self.client.force_login(self.staff_user)
         upload = SimpleUploadedFile('drawing.txt', b'not a pdf', content_type='text/plain')
