@@ -170,6 +170,19 @@ class PortfolioViewsTests(TestCase):
         self.assertIn('attachment;', response['Content-Disposition'])
         self.assertEqual(b''.join(response.streaming_content), b'%PDF-1.4 test')
 
+    def test_resume_download_uses_fixed_filename(self):
+        PortfolioDocument.objects.create(
+            title='Resume',
+            document_type=PortfolioDocument.RESUME,
+            file='documents/resume.pdf',
+            file_data=b'%PDF-1.4 resume',
+        )
+
+        response = self.client.get(reverse('download-document', args=[PortfolioDocument.RESUME]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('filename="Kashish_Civil_Engg_Resume.pdf"', response['Content-Disposition'])
+
     def test_upload_rejects_non_pdf_document(self):
         self.client.force_login(self.staff_user)
         upload = SimpleUploadedFile('drawing.txt', b'not a pdf', content_type='text/plain')

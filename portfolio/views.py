@@ -135,13 +135,20 @@ def profile_data(request):
     })
 
 
+def _download_filename(document_type, title=None):
+    if document_type == PortfolioDocument.RESUME:
+        return 'Kashish_Civil_Engg_Resume.pdf'
+
+    return get_valid_filename(f'{title or "drawing"}.pdf')
+
+
 def download_document(request, document_type):
     if document_type not in {PortfolioDocument.RESUME, PortfolioDocument.DRAWING}:
         raise Http404('Document not found.')
 
     document = PortfolioDocument.objects.filter(document_type=document_type).first()
     if document:
-        filename = get_valid_filename(f'{document.title}.pdf')
+        filename = _download_filename(document_type, document.title)
         if document.file_data:
             return FileResponse(BytesIO(document.file_data), as_attachment=True, filename=filename, content_type='application/pdf')
 
@@ -153,7 +160,7 @@ def download_document(request, document_type):
 
     fallback_path = settings.MEDIA_ROOT / 'documents' / f'{document_type}.pdf'
     if fallback_path.exists():
-        filename = 'resume.pdf' if document_type == PortfolioDocument.RESUME else 'drawing.pdf'
+        filename = _download_filename(document_type)
         return FileResponse(fallback_path.open('rb'), as_attachment=True, filename=filename, content_type='application/pdf')
 
     raise Http404('Document not found.')
