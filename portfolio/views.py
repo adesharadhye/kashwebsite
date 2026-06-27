@@ -1,3 +1,4 @@
+from io import BytesIO
 from pathlib import Path
 
 from django.conf import settings
@@ -140,9 +141,15 @@ def download_document(request, document_type):
 
     document = PortfolioDocument.objects.filter(document_type=document_type).first()
     if document:
-        file_handle = document.file.open('rb')
         filename = get_valid_filename(f'{document.title}.pdf')
-        return FileResponse(file_handle, as_attachment=True, filename=filename, content_type='application/pdf')
+        if document.file_data:
+            return FileResponse(BytesIO(document.file_data), as_attachment=True, filename=filename, content_type='application/pdf')
+
+        try:
+            file_handle = document.file.open('rb')
+            return FileResponse(file_handle, as_attachment=True, filename=filename, content_type='application/pdf')
+        except (OSError, ValueError):
+            pass
 
     fallback_path = settings.MEDIA_ROOT / 'documents' / f'{document_type}.pdf'
     if fallback_path.exists():
@@ -291,11 +298,14 @@ def upload_documents(request):
                 try:
                     _validate_pdf(uploaded_file)
                     title = 'Resume' if document_type == PortfolioDocument.RESUME else 'PDF Drawing'
+                    file_data = uploaded_file.read()
+                    uploaded_file.seek(0)
                     path = default_storage.save(f'documents/{document_type}.pdf', uploaded_file)
                     PortfolioDocument.objects.create(
                         title=title,
                         document_type=document_type,
                         file=path,
+                        file_data=file_data,
                     )
                     message = f'{title} uploaded successfully.'
                 except ValidationError as exc:

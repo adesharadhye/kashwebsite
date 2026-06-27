@@ -136,13 +136,15 @@ class PortfolioViewsTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(PortfolioDocument.objects.filter(document_type=PortfolioDocument.DRAWING).exists())
+        document = PortfolioDocument.objects.get(document_type=PortfolioDocument.DRAWING)
+        self.assertEqual(document.file_data, b'%PDF-1.4 test')
 
     def test_profile_api_returns_download_endpoint_for_uploaded_document(self):
         PortfolioDocument.objects.create(
             title='PDF Drawing',
             document_type=PortfolioDocument.DRAWING,
-            file=SimpleUploadedFile('drawing.pdf', b'%PDF-1.4 test', content_type='application/pdf'),
+            file='documents/drawing.pdf',
+            file_data=b'%PDF-1.4 test',
         )
 
         response = self.client.get(reverse('profile-data'))
@@ -157,7 +159,8 @@ class PortfolioViewsTests(TestCase):
         PortfolioDocument.objects.create(
             title='PDF Drawing',
             document_type=PortfolioDocument.DRAWING,
-            file=SimpleUploadedFile('drawing.pdf', b'%PDF-1.4 test', content_type='application/pdf'),
+            file='documents/drawing.pdf',
+            file_data=b'%PDF-1.4 test',
         )
 
         response = self.client.get(reverse('download-document', args=[PortfolioDocument.DRAWING]))

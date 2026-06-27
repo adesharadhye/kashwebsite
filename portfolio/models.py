@@ -12,6 +12,7 @@ class PortfolioDocument(models.Model):
     title = models.CharField(max_length=120)
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPES)
     file = models.FileField(upload_to='documents/')
+    file_data = models.BinaryField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
